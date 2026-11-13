@@ -1,0 +1,32 @@
+name: 检查与容器验证
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+      - name: 构建并验证真实数据库
+        shell: bash
+        run: |
+          export PGPASSWORD="$(openssl rand -hex 24)"
+          docker compose up --build -d --wait
+          curl --fail http://localhost:3000/health
+          curl --fail http://localhost:3000/ready
+          curl --fail -X POST http://localhost:3000/pgtest
+          docker compose stop postgres
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/ready)" = 503
+          curl --fail http://localhost:3000/health
+          docker compose start postgres
+      - if: always()
+        run: docker compose down --volumes
+        env:
+          PGPASSWORD: cleanup-placeholder

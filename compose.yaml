@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_DB: demo
+      POSTGRES_PASSWORD: ${PGPASSWORD:?请先设置随机 PGPASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U demo -d demo']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  backend:
+    build: .
+    ports: ["127.0.0.1:3000:3000"]
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: demo
+      PGDATABASE: demo
+      PGPASSWORD: ${PGPASSWORD:?请先设置随机 PGPASSWORD}
+      INSTANCE_ID: backend-local
+      SERVICE_SLOT: backend-local
+      DEMO_MESSAGE: 本地演示
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://localhost:5173}
+    depends_on:
+      postgres:
+        condition: service_healthy
+volumes:
+  postgres-data:
