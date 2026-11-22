@@ -22,6 +22,7 @@ Stop the services with `docker compose down`.
 
 | Method | Path | Response |
 | --- | --- | --- |
+| GET | `/` | Instance identity and a list of available endpoints |
 | GET | `/health` | API liveness |
 | GET | `/ready` | Database readiness, or HTTP 503 |
 | GET | `/server` | Instance, service slot and build revision |
