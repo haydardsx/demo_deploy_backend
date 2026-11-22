@@ -22,6 +22,7 @@ curl --fail -X POST http://localhost:3000/pgtest
 
 | 方法 | 路径 | 返回内容 |
 | --- | --- | --- |
+| GET | `/` | 实例标识和可用接口列表 |
 | GET | `/health` | 接口存活状态 |
 | GET | `/ready` | 数据库就绪状态，未就绪时返回 HTTP 503 |
 | GET | `/server` | 实例标识、服务槽位和构建版本 |
