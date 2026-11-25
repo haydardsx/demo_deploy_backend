@@ -35,4 +35,13 @@ For an existing database, set `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER` and `PG
 
 With Node.js 22 or later, run `npm ci` and `npm test`. To run database integration tests, configure a disposable PostgreSQL database and run `npm run test:integration`.
 
+## Checks before committing
+
+With Python 3, Node.js and Docker available, run the same checks as CI and install the Git hooks.
+
+    python3 scripts/check.py
+    python3 scripts/check_staged.py --install
+
+The hooks check the staged snapshot and commit title. Use a branch such as `feat/deployment-check`, a Conventional Commit title with this repository’s scope, and the project email for both Git identities.
+
 [MIT license](LICENSE)

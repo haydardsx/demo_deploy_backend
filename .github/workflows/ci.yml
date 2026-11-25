@@ -23,51 +23,12 @@ jobs:
       - name: Verify pull request commit identities
         if: github.event_name == 'pull_request'
         run: python3 .github/scripts/check_maintainer.py
-      - name: 检查拉取请求标题
+      - name: 检查拉取请求分支和标题
         if: github.event_name == 'pull_request'
-        run: |
-          python3 - <<'PY'
-          import json, os, re
-          with open(os.environ["GITHUB_EVENT_PATH"]) as event:
-              title = json.load(event)["pull_request"]["title"]
-          pattern = r"(?:feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)\((?P<scope>[a-z0-9-]+)\)!?: (?P<summary>\S[^\r\n]*)"
-          match = re.fullmatch(pattern, title)
-          scopes = "app backend demo config deps docs test ci docker".split()
-          placeholders = {"update", "fix", "wip", "tmp", "test", "change", "updates", "changes", "todo", "修改", "更新", "测试", "修复"}
-          if not match or not title.isprintable() or len(title) > 100 or match["scope"] not in scopes:
-              raise SystemExit("Use a Conventional Commit title with a supported scope.")
-          summary = match["summary"]
-          words = "".join(ch for ch in summary.casefold() if ch.isalnum())
-          if summary != summary.strip() or sum(ch.isalnum() for ch in summary) < 2 or words in placeholders:
-              raise SystemExit("Describe the change in the pull request title.")
-          PY
-      - name: Check source and README links
-        run: |
-          grep -Fq '(README.zh-CN.md)' README.md
-          grep -Fq '(README.md)' README.zh-CN.md
-          snapshot="$(mktemp -d)"
-          trap 'rm -rf "$snapshot"' EXIT
-          git archive HEAD | tar -x -C "$snapshot"
-          docker run --rm -v "$snapshot:/src:ro" ghcr.io/gitleaks/gitleaks@sha256:691af3c7c5a48b16f187ce3446d5f194838f91238f27270ed36eef6359a574d9 dir /src --redact=100 --no-banner
+        run: python3 .github/scripts/check_subjects.py --pull-request
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm audit --omit=dev --audit-level=high
-      - name: 构建并验证真实数据库
-        run: |
-          export PGPASSWORD="$(openssl rand -hex 24)"
-          docker compose up --build -d --wait
-          curl --silent --show-error --fail --output /dev/null http://localhost:3000/health
-          curl --silent --show-error --fail --output /dev/null http://localhost:3000/ready
-          docker compose run --rm -T --no-deps -v "$PWD/test:/app/test:ro" backend node --test test/postgres.integration.cjs
-          docker compose stop postgres
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/ready)" = 503
-          curl --silent --show-error --fail --output /dev/null http://localhost:3000/health
-          docker compose start postgres
-      - if: always()
-        run: docker compose down --volumes
-        env:
-          PGPASSWORD: cleanup-placeholder
+      - name: 运行与本地提交相同的工程检查
+        run: python3 scripts/check.py
