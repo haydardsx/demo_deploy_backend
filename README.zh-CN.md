@@ -35,4 +35,13 @@ curl --fail -X POST http://localhost:3000/pgtest
 
 安装 Node.js 22 或更高版本，依次运行 `npm ci` 和 `npm test`。运行数据库集成测试前，先配置可丢弃的 PostgreSQL 测试库，再运行 `npm run test:integration`。
 
+## 提交前检查
+
+准备 Python 3、Node.js 和 Docker，可运行与 CI 相同的工程检查并安装 Git 钩子。
+
+    python3 scripts/check.py
+    python3 scripts/check_staged.py --install
+
+钩子检查暂存快照与提交标题。从主线创建 `feat/deployment-check` 等用途分支，使用带本仓适用范围的 Conventional Commit 标题，提交作者和提交者均使用项目邮箱。
+
 [MIT 许可证](LICENSE)
